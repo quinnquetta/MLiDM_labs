@@ -1,0 +1,246 @@
+#include <iostream>
+#include <vector>
+#include <algorithm>
+#include <cctype> // Для проверки на букву/цифру
+
+using namespace std;
+
+// Структура для хранения элемента множества
+struct ElementData {
+    char i;
+    char b;
+    char j;
+    char c;
+
+    // Оператор сравнения на равенство
+    bool operator==(const ElementData& other) const {
+        return i == other.i && b == other.b && j == other.j && c == other.c;
+    }
+
+    // Оператор сравнения для сортировки
+    bool operator<(const ElementData& other) const { // Сравниваем по полю i, b, j, c
+        if (i != other.i) return i < other.i;
+        if (b != other.b) return b < other.b;
+        if (j != other.j) return j < other.j;
+        return c < other.c;
+    }
+};
+
+// Прототипы функций - описывают имя, параметры (вход) и возвращаемый тип (выход) каждой функции
+bool containsElement(const vector<ElementData>& set, const ElementData& element);
+void removeDuplicates(vector<ElementData>& set);
+void computeOb_edinenie(vector<ElementData>& resultSet, const vector<ElementData>& setA, const vector<ElementData>& setB);
+void computePeresechenie(vector<ElementData>& resultSet, const vector<ElementData>& setA, const vector<ElementData>& setB);
+void computeRaznost_AB(vector<ElementData>& resultSet, const vector<ElementData>& setA, const vector<ElementData>& setB);
+void computeRaznost_BA(vector<ElementData>& resultSet, const vector<ElementData>& setB, const vector<ElementData>& setA);
+void computeSymmetrich_Raznost(vector<ElementData>& resultSet, const vector<ElementData>& setA, const vector<ElementData>& setB);
+void printSet(const vector<ElementData>& set);
+void inputSet(vector<ElementData>& set, int count);
+
+// Реализации функций
+
+// Проверяет, содержится ли элемент в множестве
+bool containsElement(const std::vector<ElementData>& set, const ElementData& element) {
+    for (const auto& currentElement : set) {
+        if (currentElement == element) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// Удаляет дубликаты из множества
+void removeDuplicates(vector<ElementData>& set) {
+    vector<ElementData> uniqueSet;
+    for (const auto& element : set) {
+        if (!containsElement(uniqueSet, element)) {
+            uniqueSet.push_back(element);
+        }
+    }
+    set = std::move(uniqueSet);
+}
+
+// Переименованные определения функций
+// Вычисляет объединение множеств A и B
+void computeOb_edinenie(vector<ElementData>& resultSet, const vector<ElementData>& setA, const vector<ElementData>& setB) {
+    resultSet = setA;
+    for (const auto& elementB : setB) {
+        if (!containsElement(resultSet, elementB)) {
+            resultSet.push_back(elementB);
+        }
+    }
+}
+
+// Вычисляет пересечение множеств A и B
+void computePeresechenie(vector<ElementData>& resultSet, const vector<ElementData>& setA, const vector<ElementData>& setB) {
+    resultSet.clear(); // Очищаем вектор
+    for (const auto& elementA : setA) {
+        // Проверяем наличие в B и отсутствие в текущем результате
+        if (containsElement(setB, elementA) && !containsElement(resultSet, elementA)) {
+            resultSet.push_back(elementA);
+        }
+    }
+}
+
+// Вычисляет разность множеств A \ B
+void computeRaznost_AB(vector<ElementData>& resultSet, const vector<ElementData>& setA, const vector<ElementData>& setB) {
+    resultSet.clear();
+    for (const auto& elementA : setA) {
+        if (!containsElement(setB, elementA)) { // Если элемент из A НЕ содержится в B
+            resultSet.push_back(elementA);
+        }
+    }
+}
+
+// Вычисляет разность множеств B \ A
+void computeRaznost_BA(vector<ElementData>& resultSet, const vector<ElementData>& setB, const vector<ElementData>& setA) {
+    resultSet.clear();
+    for (const auto& elementB : setB) { // Идем по setB
+        if (!containsElement(setA, elementB)) { // Если элемент из B НЕ содержится в A
+            resultSet.push_back(elementB);
+        }
+    }
+}
+
+// Вычисляет симметрическую разность (A delta B)
+void computeSymmetrich_Raznost(vector<ElementData>& resultSet, const vector<ElementData>& setA, const vector<ElementData>& setB) {
+    resultSet.clear();
+    vector<ElementData> diffAB, diffBA;
+    // Используем функции для разности
+    computeRaznost_AB(diffAB, setA, setB); // A \ B
+    computeRaznost_BA(diffBA, setB, setA); // B \ A
+
+    // Объединяем обе разности
+    resultSet.insert(resultSet.end(), diffAB.begin(), diffAB.end());
+    resultSet.insert(resultSet.end(), diffBA.begin(), diffBA.end());
+}
+
+// Остальные определения функций
+// Печатает множество
+void printSet(const vector<ElementData>& set) {
+    cout << "{ ";
+    bool firstElement = true;
+    for (const auto& elem : set) {
+        if (!firstElement) {
+            cout << ", ";
+        }
+        cout << elem.i << elem.b << elem.j << elem.c;
+        firstElement = false;
+    }
+    cout << " }";
+}
+
+// Вводит элементы множества с валидацией для формата ibjc
+void inputSet(vector<ElementData>& set, int count) {
+    if (count <= 0) return;
+    cout << "Введите " << count << " элемент(ов) (формат: i b j c, где i-четная цифра, b-буква, j-нечетная цифра, c-любая цифра):\n";
+    ElementData currentElement;
+
+    for (int k = 0; k < count; ++k) {
+        bool validInput = false;
+        while (!validInput) {
+            currentElement = {};
+
+            cout << "Элемент " << k + 1 << ": ";
+            cin >> currentElement.i >> currentElement.b >> currentElement.j >> currentElement.c; // Считывание 4 символа через пробелы
+
+            //1. Если пользователь ввёл не 4 символа, разделенных пробелом
+            if (cin.fail()) {
+                cout << "Ошибка ввода. Пожалуйста, введите 4 символа, разделенных пробелом.\n";
+                cin.clear(); // Сброс флагов ошибок
+                cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Очистка буфера ввода
+                continue; // Повторный запрос ввода
+            }
+
+            // Присваиваем переменные для проверки на цифру/букву
+            bool i_is_digit = isdigit(static_cast<unsigned char>(currentElement.i));
+            bool b_is_alpha = isalpha(static_cast<unsigned char>(currentElement.b));
+            bool j_is_digit = isdigit(static_cast<unsigned char>(currentElement.j));
+            bool c_is_digit = isdigit(static_cast<unsigned char>(currentElement.c));
+
+            //2. Если пользователь ввёл символы в неверном формате
+            if (!i_is_digit || !b_is_alpha || !j_is_digit || !c_is_digit) {
+                cout << "Ошибка типа: Ожидался формат 'цифра буква цифра цифра'.\n";
+                cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                continue;
+            }
+
+            int i_val = currentElement.i - '0';
+            int j_val = currentElement.j - '0';
+
+            bool i_is_even = (i_val % 2 == 0);
+            bool j_is_odd = (j_val % 2 != 0);
+
+            if (i_is_even && b_is_alpha && j_is_odd && c_is_digit) {
+                set.push_back(currentElement); // Добавляем элемент, прошедший проверку
+                validInput = true; // Устанавливаем true-положение для нашего ввода
+            }
+            //3. Если пользователь ввёл верные символы, но не подходящие нам под условия
+            else {
+                cout << "Ошибка валидации: ";
+                if (!i_is_even) cout << "Первая цифра (i) должна быть четной. ";
+                if (!j_is_odd) cout << "Третья цифра (j) должна быть нечетной. ";
+                cout << "Повторите ввод.\n";
+                cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            }
+        }
+        if (validInput) {
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        }
+    }
+}
+
+int main() {
+    setlocale(LC_ALL, "RU");
+    vector<ElementData> setA, setB;
+    vector<ElementData> obedinenieResult, peresechenieResult, symmetrichRaznostResult, raznostA_B, raznostB_A;
+    int sizeA = 0, sizeB = 0;
+
+    // Ввод множества A
+    cout << "Введите размер первого множества (A): ";
+    while (!(cin >> sizeA) || sizeA < 0) {
+        cout << "Ошибка: Размер должен быть неотрицательным целым числом. Повторите ввод: ";
+        cin.clear(); // Сброс флагов ошибок
+        cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Очистка буфера
+    }
+    cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Очистка буфера после УСПЕШНОГО ввода
+
+    inputSet(setA, sizeA); // Ввод элементов по формату ibjc
+    cout << "Введенное множество A (до удаления дубликатов): "; printSet(setA); cout << endl;
+    removeDuplicates(setA);
+    cout << "Множество A (после удаления дубликатов): "; printSet(setA); cout << endl;
+
+    // Ввод множества B
+    cout << "\nВведите размер второго множества (B): ";
+    while (!(cin >> sizeB) || sizeB < 0) { // Проверка на корректность ввода и неотрицательность
+        cout << "Ошибка: Размер должен быть неотрицательным целым числом. Повторите ввод: ";
+        cin.clear(); // Сброс флагов ошибок
+        cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Очистка буфера
+    }
+    cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Очистка буфера после УСПЕШНОГО ввода
+
+    inputSet(setB, sizeB);
+    cout << "Введенное множество B (до удаления дубликатов): "; printSet(setB); cout << endl;
+    removeDuplicates(setB);
+    cout << "Множество B (после удаления дубликатов): "; printSet(setB); cout << endl;
+
+    // Выполнение операций
+    computeOb_edinenie(obedinenieResult, setA, setB);
+    computePeresechenie(peresechenieResult, setA, setB);
+    computeSymmetrich_Raznost(symmetrichRaznostResult, setA, setB);
+    computeRaznost_AB(raznostA_B, setA, setB);
+    computeRaznost_BA(raznostB_A, setB, setA);
+
+    // Результаты
+    cout << "\nРезультаты Операций:\n";
+    cout << "Множество A = "; printSet(setA);
+    cout << "\nМножество B = "; printSet(setB);
+    cout << "\nОбъединение (A U B) = "; printSet(obedinenieResult);
+    cout << "\nПересечение (A n B) = "; printSet(peresechenieResult);
+    cout << "\nСимметрическая разность (A delta B) = "; printSet(symmetrichRaznostResult);
+    cout << "\nРазность (A \\ B) = "; printSet(raznostA_B);
+    cout << "\nРазность (B \\ A) = "; printSet(raznostB_A);
+    cout << endl;
+
+    return 0;
+}
