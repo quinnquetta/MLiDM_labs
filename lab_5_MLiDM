@@ -1,19 +1,16 @@
 #include <iostream>
 #include <vector>
 #include <string>
-#include <limits> // Для numeric_limits, streamsize
+#include <limits>
 
-// Пространство имен std, чтобы не писать std::
 using namespace std;
 
 // Функция для вывода на экран матрицы
 void pechatat_matritsu(const vector<vector<int>>& matritsa, int razmer, const string& zagolovok) {
-    cout << zagolovok << endl; // Выводим заголовок и переводим строку
-    // Проходим по строкам матрицы
+    cout << zagolovok << endl;
     for (int i = 0; i < razmer; ++i) {
-        // Проходим по столбцам текущей строки
         for (int j = 0; j < razmer; ++j) {
-            cout << matritsa[i][j] << " "; // Выводим элемент матрицы
+            cout << matritsa[i][j] << " ";
         }
         cout << endl;
     }
@@ -25,7 +22,6 @@ vector<vector<int>> naiti_matritsu_dostizhimosti(
     const vector<vector<int>>& ishodnaya_matritsa_smezhnosti,
     int kolichestvo_vershin
 ) {
-    // Копия исходной матрицы смежности, чтобы преобразовать её в матрицу достижимости
     vector<vector<int>> matritsa_dostizhimosti = ishodnaya_matritsa_smezhnosti;
 
     // Инициализируем диагональные элементы
@@ -39,7 +35,7 @@ vector<vector<int>> naiti_matritsu_dostizhimosti(
             for (int j_konechnaya = 0; j_konechnaya < kolichestvo_vershin; ++j_konechnaya) {
                 if (matritsa_dostizhimosti[i_nachalnaya][k_promezhutochnaya] == 1 &&
                     matritsa_dostizhimosti[k_promezhutochnaya][j_konechnaya] == 1) {
-                    matritsa_dostizhimosti[i_nachalnaya][j_konechnaya] = 1; // Если путь существует
+                    matritsa_dostizhimosti[i_nachalnaya][j_konechnaya] = 1;
                 }
             }
         }
@@ -57,8 +53,8 @@ int main() {
     // Проверка на целое положительное число вершин
     while (!(cin >> kolichestvo_vershin_polzovatelya) || kolichestvo_vershin_polzovatelya <= 0) {
         cout << "Ошибка: Количество вершин должно быть положительным целым числом. Попробуйте снова: ";
-        cin.clear(); // Очищаем ошибки в потоке ввода
-        cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Очищаем некорректный ввод пользователя из буфера
+        cin.clear();
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
     }
 
     // Двумерный вектор для матрицы смежности, размер матрицы: kolichestvo_vershin_polzovatelya * kolichestvo_vershin_polzovatelya
@@ -69,23 +65,19 @@ int main() {
     // Ввод элементов матрицы смежности и их проверка
     for (int i = 0; i < kolichestvo_vershin_polzovatelya; ++i) {
         for (int j = 0; j < kolichestvo_vershin_polzovatelya; ++j) {
-            cout << "Элемент [" << i << "][" << j << "]: "; // Ввод элемента матрицы смежности
+            cout << "Элемент [" << i << "][" << j << "]: ";
             int element;
             while (!(cin >> element) || (element != 0 && element != 1)) { // Проверка корректности ввода элемента матрицы
                 cout << "Ошибка: Введите 0 или 1. Текущий элемент [" << i << "][" << j << "] ";
-                cin.clear(); // Очищаем ошибки в потоке ввода
-                cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Очищаем некорректный ввод пользователя из буфера
+                cin.clear();
+                cin.ignore(numeric_limits<streamsize>::max(), '\n');
             }
-            ishodnaya_matritsa_polzovatelya[i][j] = element; // Записываем КОРРЕКТНЫЙ элемент в матрицу
+            ishodnaya_matritsa_polzovatelya[i][j] = element;
         }
     }
 
-    // Записываем введенную пользователем матрицу смежности
     pechatat_matritsu(ishodnaya_matritsa_polzovatelya, kolichestvo_vershin_polzovatelya, "\nВведенная Вами матрица смежности:");
-
-    vector<vector<int>> poluchennaya_matritsa = // Вычисляем матрицу достижимости
-        naiti_matritsu_dostizhimosti(ishodnaya_matritsa_polzovatelya, kolichestvo_vershin_polzovatelya);
-
+    vector<vector<int>> poluchennaya_matritsa = naiti_matritsu_dostizhimosti(ishodnaya_matritsa_polzovatelya, kolichestvo_vershin_polzovatelya);
     pechatat_matritsu(poluchennaya_matritsa, kolichestvo_vershin_polzovatelya, "Полученная матрица достижимости:");
 
     return 0;
