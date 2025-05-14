@@ -1,0 +1,202 @@
+#include <iostream>
+#include <vector>
+#include <string>
+#include <algorithm> // Для find
+#include <cctype>    // Для isspace
+
+// Пространство имен std, чтобы не писать std::
+using namespace std;
+
+// Простая структура для хранения пар
+struct ParaOtnosheniya {
+    string perviy;
+    string vtoroy;
+};
+
+// Функции для разбора строк
+
+// Разделяет строку по пробелам и добавляет элементы в вектор строк
+void razobratStrokuVVector(const string& stroka, vector<string>& elementy) {
+    string tekushiyElement;
+    for (char simvol : stroka) {
+        // isspace из <cctype> для проверки пробелов
+        if (isspace(static_cast<unsigned char>(simvol))) {
+            if (!tekushiyElement.empty()) {
+                elementy.push_back(tekushiyElement);
+                tekushiyElement.clear();
+            }
+        }
+        else {
+            tekushiyElement += simvol;
+        }
+    }
+    // Добавить последний элемент, если строка не заканчивалась пробелом
+    if (!tekushiyElement.empty()) {
+        elementy.push_back(tekushiyElement);
+    }
+}
+
+
+// Читает множество (как вектор) из строки
+vector<string> prochitatMnozhestvoKakVector() {
+    vector<string> elementy;
+    string stroka;
+    // ws пропускает начальные пробельные символы (например, оставшийся '\n')
+    if (getline(cin >> ws, stroka)) {
+        razobratStrokuVVector(stroka, elementy);
+    }
+    return elementy;
+}
+
+// Читает отношение (вектор пар) из строк
+vector<ParaOtnosheniya> prochitatOtnoshenie() {
+    vector<ParaOtnosheniya> pary; // Вектор, где хранятся прочитанные пары
+    string stroka; // Переменная, где хранися прочитанная строка
+
+    while (getline(cin, stroka) && !stroka.empty()) { // Пока введённая строка непустая
+        string perviyElement, vtoroyElement;
+        size_t nachaloPervogo = 0;
+        // Пропускаем начальные пробелы, пока мы не вышли за пределы строки и текущий символ является пробелом
+        while (nachaloPervogo < stroka.length() && isspace(static_cast<unsigned char>(stroka[nachaloPervogo]))) {   
+            nachaloPervogo++;
+        }
+
+        // Найти конец первого элемента - первый пробел после начала
+        size_t konetsPervogo = nachaloPervogo;
+        // Конец - это либо конец строки, либо первый пробел после начала первого элемента
+        while (konetsPervogo < stroka.length() && !isspace(static_cast<unsigned char>(stroka[konetsPervogo]))) {
+            konetsPervogo++;
+        }
+
+        if (konetsPervogo > nachaloPervogo) { // Проверка - нашёлся ли какой-то элемент
+            perviyElement = stroka.substr(nachaloPervogo, konetsPervogo - nachaloPervogo);
+        }
+        else {
+            cerr << "Предупреждение: Пропуск некорректной строки ввода (не найден первый элемент): '" << stroka << "'\n";
+            continue;
+        }
+
+        // Найти начало второго элемента - пропустить пробелы после первого
+        size_t nachaloVtorogo = konetsPervogo;
+        while (nachaloVtorogo < stroka.length() && isspace(static_cast<unsigned char>(stroka[nachaloVtorogo]))) {
+            nachaloVtorogo++;
+        }
+
+        // Проверка на возможные символы после пробела (возможный второй элемент)
+        if (nachaloVtorogo < stroka.length()) {
+            vtoroyElement = stroka.substr(nachaloVtorogo);
+            size_t konetsPoleznoyChasti = vtoroyElement.length();
+            while (konetsPoleznoyChasti > 0 && isspace(static_cast<unsigned char>(vtoroyElement[konetsPoleznoyChasti - 1]))) {
+                konetsPoleznoyChasti--; // Убираем возможные пробелы после конца второго элемента
+            }
+            vtoroyElement = vtoroyElement.substr(0, konetsPoleznoyChasti);
+        }
+
+        if (!perviyElement.empty() && !vtoroyElement.empty()) {
+            pary.push_back({ perviyElement, vtoroyElement });
+        }
+        else if (!perviyElement.empty()) {
+            // Выводим предупреждение
+            cerr << "Предупреждение: Пропуск некорректной строки ввода (не найден второй элемент): '" << stroka << "'\n";
+        }
+    }
+    return pary;
+}
+
+// Логика
+int main() {
+    setlocale(LC_ALL, "Russian");
+
+    cout << "Определение, является ли отношение функцией.\nНеобходимо ввести элементы множества отправления (A), множества прибытия (B) и пары, составляющие отношение.\n";
+    cout << "Введите элементы множества A через пробел (область определения):\n";
+    vector<string> mnozhestvo_A = prochitatMnozhestvoKakVector();
+    cout << "Введите элементы множества B через пробел (область значений):\n";
+    vector<string> mnozhestvo_B = prochitatMnozhestvoKakVector();
+    cout << "Введите пары отношения (формат - элемент_A элемент_B, по одной паре на строке):\n";
+    vector<ParaOtnosheniya> otnoshenie = prochitatOtnoshenie();
+
+    // Логика проверки
+    bool yavlyaetsya_funkciey = true;
+    bool oshibka_naydena = false;
+    string prichina_oshibki = "";
+
+    // Проверка принадлежности элементов и уникальности отображения
+    for (size_t i = 0; i < otnoshenie.size() && !oshibka_naydena; ++i) {
+        const ParaOtnosheniya& tekushaya_para = otnoshenie[i];
+        const string& element_iz_A = tekushaya_para.perviy;
+        const string& element_iz_B = tekushaya_para.vtoroy;
+
+        // Проверка принадлежности первого элемента пары множеству A
+        if (find(mnozhestvo_A.begin(), mnozhestvo_A.end(), element_iz_A) == mnozhestvo_A.end()) {
+            yavlyaetsya_funkciey = false;
+            prichina_oshibki = "Элемент '" + element_iz_A + "' из пары (" + element_iz_A + ", " + element_iz_B + ") не принадлежит множеству A.";
+            oshibka_naydena = true; // Если цикл нашёл ошибку
+            continue;
+        }
+
+        // Проверка принадлежности второго элемента пары множеству B
+        if (find(mnozhestvo_B.begin(), mnozhestvo_B.end(), element_iz_B) == mnozhestvo_B.end()) {
+            yavlyaetsya_funkciey = false;
+            prichina_oshibki = "Элемент '" + element_iz_B + "' из пары (" + element_iz_A + ", " + element_iz_B + ") не принадлежит множеству B.";
+            oshibka_naydena = true;
+            continue;
+        }
+
+        // Проверка уникальности - то есть ищем другие пары с первым элементом
+        // Сравним текущую пару (индекс i) со всеми остальными (индекс j)
+        for (size_t j = 0; j < otnoshenie.size(); ++j) {
+            if (i == j) continue; // Чтобы не сравнивать пару саму с собой
+
+            const ParaOtnosheniya& drugaya_para = otnoshenie[j];
+            if (drugaya_para.perviy == element_iz_A && drugaya_para.vtoroy != element_iz_B) { // Условие для нарушения уникальности
+                yavlyaetsya_funkciey = false;
+                prichina_oshibki = "Нарушение единственности: Элемент '" + element_iz_A + "' отображается и в '" + element_iz_B + "', и в '" + drugaya_para.vtoroy + "'.";
+                oshibka_naydena = true; // Если цикл нашёл ошибку
+                break;
+            }
+        }
+    }
+
+    // Проверка тотальности
+    if (yavlyaetsya_funkciey) {
+        for (const string& trebuemiy_element_A : mnozhestvo_A) { // Проходим по всем элементам исходного множества A
+            bool nayden_v_otnoshenii = false;
+            for (const ParaOtnosheniya& para_element : otnoshenie) { // Ищем этот элемент как первый в парах отношения
+                if (para_element.perviy == trebuemiy_element_A) {
+                    nayden_v_otnoshenii = true;
+                    break; // Нашли, можно дальше не искать для этого элемента A
+                }
+            }
+            // Если не нашли элемент
+            if (!nayden_v_otnoshenii) {
+                yavlyaetsya_funkciey = false;
+                prichina_oshibki = "Нарушение тотальности: Элемент '" + trebuemiy_element_A + "' из множества A не отображен отношением.";
+                break; // Нашли первый неотображенный элемент, дальше проверять нет смысла
+            }
+        }
+    }
+
+    // Вывод результата
+    cout << "\nРезультат анализа\n";
+    cout << "Множество A (область определения): { ";
+    for (const auto& el : mnozhestvo_A) cout << el << " ";
+    cout << "}\n";
+    cout << "Множество B (область значений): { ";
+    for (const auto& el : mnozhestvo_B) cout << el << " ";
+    cout << "}\n";
+    cout << "Отношение R: { ";
+    for (size_t i = 0; i < otnoshenie.size(); ++i) {
+        cout << "(" << otnoshenie[i].perviy << ", " << otnoshenie[i].vtoroy << ")" << (i == otnoshenie.size() - 1 ? "" : ", ");
+    }
+    cout << " }\n\n";
+
+    if (yavlyaetsya_funkciey) {
+        cout << "Вывод: Данное отношение ЯВЛЯЕТСЯ функцией из множества A в множество B.\n";
+    }
+    else {
+        cout << "Вывод: Данное отношение НЕ ЯВЛЯЕТСЯ функцией из множества A в множество B.\n";
+        cout << "Причина - " << prichina_oshibki << "\n";
+    }
+
+    return 0;
+}
